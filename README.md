@@ -1,9 +1,17 @@
 # find_fastest_vpn
 
-## 1. Short description
+A script to use on a openvpn gateway - one may automatically activate the fastest connection of the available server, even with different providers, if user credentials and correct connection parameters are in place.
+
+## 1. About
 Shell script to use on a router which provides access as gateway to an OpenVPN server tunnel. The script will determine the fastest OpenVPN connection out of a list of VPN servers, from which the authentication credentials, keys and other specific settings are known. This might be free servers but commercial servers as well. Every server which might be addressed directly via OpenVPN could be integrated.
 
-## 2. Requirements/Preparatory work
+##2. License
+This script is under the MIT License. See LICENSE file.
+
+##3. Dependencies
+This scripts needs openvpn and iperf clients installed
+
+##4. Requirements/Preparatory work
 To use the script, there are some requirements:
 
 - the service "openvpn" has to be installed and ready to use (will be needed for the perfomace measurement)
@@ -20,7 +28,7 @@ The following files are expected:
 - */etc/openvpn/providers/<myProvider>/additional.txt* - provider global conifguration settings and options
 - */etc/openvpn/providers/<myProvider>/vpnhosts* - list of all .ovpn files (basename) which will be included in the scan
 
-## 3. Now let's do the hard work!
+##3. Now let's do the hard work!
 To prepare the data, you need at first a bunch of *.ovpn* files from your desired VPN provider, normally send to you via e-mail as zipped file. These must be copied into the directory */etc/openvpn/providers/<myProvider>/configs*. Then you open a *.ovpn* fiel representatively for all files. Now we have to identify all the data in the file which is provider or user specific, e.g. the user credentials, the filename of the RSA key, the certificate file - all provided by your VPN hoster.
 
 An example, in configuration file you'll find the following lines:
@@ -53,10 +61,10 @@ Now if the all these points are done and chekced, you may start the script like
   ./find_fastest_vpn.sh -p <myProvider>
 ```
   
-## 4. Preparation of the configuration files
+##4. Preparation of the configuration files
 Now the script will scan all .ovpn files found under */etc/openvpn/providers/<myProvider>/configs/* and replace all entries found in **"additional.txt"** in the *.ovpn* file. If an entry is not found, it will be attached to the current entries. The resulting file will be copied under */etc/openvpn/providers/<myProvider>/preps/*, so we are sure, no original *.ovpn* file will be changed. If a corresponding *.ovpn* file already exists in the **"preps"** directory, it will be skipped. So if you want to renew these generated configuration files, for example because of some changes you made in **"additional.txt"**, you just empty the *../preps/* directory, and after the next start of the script, the configuration files wil be newly generated.
 
-## 5. Find the fastest server
+##5. Find the fastest server
 For the determination of the fastest server connection, you need at first a file with a list configuration files. There all server configurations are listed which you need to include in the performance test. The file name expected is */etc/openvpn/providers/<myProvider>/vpnhosts*, and the *.opvn* configurations are listed linewise in the file with their basename like:
 
   ```bash
@@ -74,7 +82,7 @@ So now the script will step through all active entries in "vpnhosts" and tries t
 
 > After all entries are scanned, the script picks the entry which caused the best bandwidth value and creates a symbolic link named "/etc/openvpn/current.conf". This link points to the actually determined, fastest VPN connection. So you have to be sure that openvpn is configured to automatically load the configuration found under the "current.conf" link. Therefore you need an entry **<AUTOSTART="current">** in the *"/etc/defaults/openvpn"* file, then openvpn will load this file when started as service. (Debian)
 
-## 6. ToDo
+##6. ToDo
 
 - add an option "force" to newly create the generated configurations even if they already exists
 - add an option to check, if openvpn ist correctly configured to autoload the "current.conf" settings
@@ -82,7 +90,7 @@ So now the script will step through all active entries in "vpnhosts" and tries t
 
 If you have some feedback, ideas or found a bug, feel free to contact me.
 
-July 2015 - Manfred Mueller-Spaeth - fms1961@gmail.com
+Copyright July 2015 by Manfred Mueller-Spaeth - fms1961@gmail.com
 
 
 
