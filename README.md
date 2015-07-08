@@ -1,40 +1,45 @@
 # find_fastest_vpn
 
-## Short description
+## 1. Short description
 
 Shell script to determine the fastest OpenVPN connection out of a list of VPN servers, from which the authentication credentials, keys and other specific settings are know. This might be free servers but commercial servers as well. Every server which might be addressed directly via OpenVPN could be integrated.
 
-## Requirements/Preparatory work
+## 2. Requirements/Preparatory work
 
 To use the script, there are some requirements:
 
 - the service "openvpn" has to be installed and ready to use (will be needed for the perfomace measurement)
 - then entry **<AUTOSTART="current">** in the **"/etc/defaults/openvpn"** file must exists (to automatically load the configuration)
 - as default, the script expects a tree structure under the folder */etc/openvpn*:
+- 
 ![Alt text](resources/tree.png?raw=true "Expected file tree (example)")
 
-The following dirctories are expected:
-- */etc/openvpn/providers/<myProvider>* - form here all provider specific data is stored
+The following directories are expected:
+- */etc/openvpn/providers/<myProvider>* - from here all provider specific data is stored
 - */etc/openvpn/providers/<myProvider>/configs* - any *.ovpn* configuration files you received from you provider go here
 
 The following files are expected:
 - */etc/openvpn/providers/<myProvider>/additional.txt* - provider global conifguration settings and options
 - */etc/openvpn/providers/<myProvider>/vpnhosts* - list of all .ovpn files (basename) which will be included in the scan
 
-## Now let's do the hard work!
+## 3. Now let's do the hard work!
 
 To prepare the data, you need at first a bunch of *.ovpn* files from your desired VPN provider, normally send to you via e-mail as zipped file. These must be copied into the directory */etc/openvpn/providers/<myProvider>/configs*. Then you open a *.ovpn* fiel representatively for all files. Now we have to identify all the data in the file which is provider or user specific, e.g. the user credentials, the filename of the RSA key, the certificate file - all provided by your VPN hoster.
 
 An example, in a *.ovpn* file you find the following lines:
   
   > ca ca.crt
+  
   > auth-user-pass auth.txt
+  
   > verb 3
   
 you copy these lines int the (newly created) file */etc/openvpn/providers/<myProvider>/additional.txt* and you change the entries now to absolute path names:
 
   > ca /etc/openvpn/providers/<myProvider>/ca.crt
+  
   > auth-user-pass /etc/openvpn/providers/<myProvider>/auth.txt
+  
   > verb 3
   
 You see that all the global files - which later will be commonly used in connection to the selected *.ovpn* file - should be found under the */etc/openvpn/providers/<myProvider>/* directory. The names of the files may differ from provider to provider and there might be also other and more files referenced in the *.ovpn* file - all these commonly used files go to the <myProvider> directory. Normally, the base will be a key file, a certificate file and the user credential file. So be sure all common files references of the *.ovpn* files are found in **"additional.txt"** with their appropritate absolute file names as shown above.
@@ -42,6 +47,7 @@ You see that all the global files - which later will be commonly used in connect
 If you like to globally change some settings of the OpenVPN connections, you may add other entries in **"additional.txt"** as well. E.g. you need some logging, you may put these lines in the file:
 
   > log-append /var/log/openvpn/client.log
+  
   > verb 3
 
 as you would add in a standard *.ovpn* configuration file.
@@ -57,12 +63,12 @@ Now the script will scan all .ovpn files found under */etc/openvpn/providers/<my
 For the determination of the fastest server connection, you need at first a file with a list configuration files. There all server configurations are listed which you need to include in the performance test. The file name expected is */etc/openvpn/providers/<myProvider>/vpnhosts*, and the *.opvn* configurations are listed linewise in the file with their basename like:
 
   > ...
-  > **myProvider-DE-Frankfurt.ovpn**
-  > #myProvider-UK-London.ovpn  -> will be skipped
-  > **myProvider-US-NewYork.ovpn**
-  > #myProvider-US-LasVegas.ovpn -> will be skipped
-  > **myProvider-US-LosAngeles.ovpn**
-  > ...
+   **myProvider-DE-Frankfurt.ovpn**
+   #myProvider-UK-London.ovpn  -> will be skipped
+   **myProvider-US-NewYork.ovpn**
+   #myProvider-US-LasVegas.ovpn -> will be skipped
+   **myProvider-US-LosAngeles.ovpn**
+   ...
   
 You may generate this file with *"ls -1 > vpnhosts"* in a shell, if you changed the directory to */etc/openvpn/providers/<myProvider>/configs*. Move the "vpnhosts" file one level up after this to *../<myProvider>*. As you may comment out single entries with the hash sign **"#"** at the beginning of the line, you may add all servers and disable only those you don't want to check. It's convenient to have a list of perhaps 10 or 15 servers, because the bandwidth measurement needs it's time.
 
