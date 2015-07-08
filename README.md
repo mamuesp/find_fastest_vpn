@@ -1,7 +1,7 @@
 # find_fastest_vpn
 
 ## 1. Short description
-Shell script to determine the fastest OpenVPN connection out of a list of VPN servers, from which the authentication credentials, keys and other specific settings are know. This might be free servers but commercial servers as well. Every server which might be addressed directly via OpenVPN could be integrated.
+Shell script to use on a router which provides access as gateway to an OpenVPN server tunnel. The script will determine the fastest OpenVPN connection out of a list of VPN servers, from which the authentication credentials, keys and other specific settings are known. This might be free servers but commercial servers as well. Every server which might be addressed directly via OpenVPN could be integrated.
 
 ## 2. Requirements/Preparatory work
 To use the script, there are some requirements:
