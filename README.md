@@ -16,7 +16,7 @@ To use the script, there are some requirements:
 
 - the service "openvpn" has to be installed and ready to use (will be needed for the perfomace measurement)
 - then entry **<AUTOSTART="current">** in the **"/etc/defaults/openvpn"** file must exists (to automatically load the configuration)
-- as default, the script expects a tree structure under the folder */etc/openvpn*:
+- as default, the script expects a tree structure under the folder */etc/openvpn* (an example tree structure will be found in this project under *"examples"*):
 
 ![Alt text](resources/tree.png?raw=true "Expected file tree (example)")
 
