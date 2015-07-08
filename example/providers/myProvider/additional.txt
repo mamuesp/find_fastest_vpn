@@ -1,3 +1,0 @@
-ca /etc/openvpn/providers/<myProvider>/ca.crt
-auth-user-pass /etc/openvpn/providers/<myProvider>/auth.txt
-verb 3
