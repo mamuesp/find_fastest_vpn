@@ -8,6 +8,13 @@ There are some requirements:
 
  ![Alt text](resources/tree.png?raw=true "Expected file tree (example)")
 
+There has to be the following dirctories:
+- /etc/openvpn/providers/<myProvider> - directory, where all provider specific data is stored
+- /etc/openvpn/providers/<myProvider>/configs - directory, where all configuration files you received from you provider, are stored
+
+There has to be the following files:
+- /etc/openvpn/providers/<myProvider>/additional.txt - provider global conifguration settings and options
+- /etc/openvpn/providers/<myProvider>/vpnhosts - list of all .ovpn files (basename) which will be included in the scan
 To prepare the data, you need at first a bunch of .ovpn files from your desired VPN provider. These must be copied into the directory /etc/openvpn/providers/<myProvider>/configs. Then you identify all the dasta in the .ovpn file which is provider or user specific, e.g. the user credentials and the key and certificate file provided by the VPN hoster.
 
 An example, in a .ovpn file you fin the following lines:
