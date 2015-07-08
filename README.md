@@ -49,7 +49,9 @@ as you would add in a standard *.ovpn* configuration file.
 
 Now if the all these points are done and chekced, you may start the script like
 
-  > __./find_fastest_vpn.sh -p <myProvider>__
+```bash
+  ./find_fastest_vpn.sh -p <myProvider>
+```
   
 ## 4. Preparation of the configuration files
 Now the script will scan all .ovpn files found under */etc/openvpn/providers/<myProvider>/configs/* and replace all entries found in **"additional.txt"** in the *.ovpn* file. If an entry is not found, it will be attached to the current entries. The resulting file will be copied under */etc/openvpn/providers/<myProvider>/preps/*, so we are sure, no original *.ovpn* file will be changed. If a corresponding *.ovpn* file already exists in the **"preps"** directory, it will be skipped. So if you want to renew these generated configuration files, for example because of some changes you made in **"additional.txt"**, you just empty the *../preps/* directory, and after the next start of the script, the configuration files wil be newly generated.
