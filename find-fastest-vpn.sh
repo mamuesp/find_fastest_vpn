@@ -4,15 +4,26 @@
 # PURPOSE :   out of a bundle of OpenVPN configuration files, determine the fastest
 #             connection and link the corresponding .ovpn file as current connection
 # COPYRIGHT:  Manfred Mueller-Spaeth, fms1961@gmail.com
-# LICENSE:    The MIT License (MIT)
+# LICENSE:    This script might be used under the MIT License (MIT)
 #
 
+######################## function usage ###############################
+#
+# A little usage hint if the script is called with the wrong parameters
+# Might be extended with a little help text in the future.
+#
 usage () {
     echo    "$*"
     echo -e ""      
     echo -e "Usage: ${0##*/} -p <VPN service provider>\n" 1>&2; exit 1;
 }
 
+######################## function doLog ###############################
+#
+# This function prints a message to stdout and an optional logfile,
+# if VERBOSE is set to true. If not, it logs only to the logfile 
+# defined with the second paraemter
+#
 function doLog() {
 	if [ $VERBOSE ] || [ ${3} ]; then
 		echo ${1} | tee -a ${2}
@@ -21,8 +32,13 @@ function doLog() {
 	fi
 }
 
+######################## function printSettings ###############################
+#
+# This function prints all parameters used in this script if DOUBLE_VERBOSE
+# is set to "true"
+#
 function printSettings() {
-	if [ $DOUBLE_VERBOSE ]; then
+	if [ $DOUBLE_VERBOSE == true ]; then
 		echo "List of settings:"
 		HLP_OVPN_PATH="OpenVPN settings path"
 		HLP_CONF_PATH="Configurations path" 
@@ -60,6 +76,10 @@ function printSettings() {
 	fi
 }
 
+######################## function setDefaults ###############################
+#
+# This function sets the default parameters used in this script
+#
 function setDefaults() {
 	# OpenVPN settings path
 	OVPN_PATH="/etc/openvpn/"
@@ -108,15 +128,28 @@ function setDefaults() {
 	TXT_RES=$(tput sgr0)       # Reset
 }
 
-# Define a timestamp function
+######################## function timestamp ###############################
+#
+# This function returns a formatted timestamp
+#
 function timestamp() {
 	date +"%Y-%m-%d_%H-%M-%S"
 }
 
+######################## function firstWord ###############################
+#
+# This function returns the first word of a textline
+#
 function firstWord() {
 	echo $1 | awk '{split($0,a,/ /); print a[1]}'
 }
 
+######################## function prepareConfig ###############################
+#
+# This function sets the value of a parameter as defined in "additional.txt"
+# or appends a new parameter in a new line, if it does exist in the 
+# configuration file (
+#
 function prepareConfig() {
 	sWord="$(firstWord $1)"
 	echo "${1} - ${2}"
@@ -126,6 +159,13 @@ function prepareConfig() {
 	fi
 }
 
+######################## function checkHosts ###############################
+#
+# This function tries to open an openvpn tunnel with the settings of the 
+# actually read configuration from "vpnhosts". If successful, the possible
+# bandwidth will be determined via "iperf", the value will be compared with
+# the other results laster on.
+#
 function checkHosts() {
 	lineLen=${#2}
 	
@@ -134,7 +174,7 @@ function checkHosts() {
 		doLog "$( timestamp ) - current conf: ${currConf}" ${FASTLOG}
 		# set the source for the preparation
 		srcConf="${CONF_PREPS}${currConf}"
-		if [ "${force}" = true ] || ! [ -f "${srcConf}" ]; then
+		if [ "${FORCE_PREPS}" = true ] || ! [ -f "${srcConf}" ]; then
 			doLog "$( timestamp ) - customize current conf" ${FASTLOG}
 			# copy the ovpn file to the preps folder
 			test="$( cp -a ${CONF_FILES}${currConf} ${srcConf} )"
@@ -196,6 +236,11 @@ function checkHosts() {
 	fi
 }
 
+######################## function startFinding ###############################
+#
+# This function handles the performance measurement of the configurations
+# which are found in the list "vpnhosts" and are not commented (deactivated)
+#
 function startFinding() {
 
     if ! [[ -d "${CONF_PATH}${PROVIDER}" ]]; then
@@ -252,67 +297,81 @@ function startFinding() {
     echo "$( timestamp )"" - Service restarted ... " | tee -a ${FASTLOG}
 }
 
-###################### deletetempfiles function ##############################
+######################## function delTempFiles ###############################
 
 # This function is called by trap command
 # For conformation of deletion use rm -fi *.$$
 
-deletetempfiles() {
+delTempFiles() {
     rm -f *.$$
     if [ -f "${BW_FILE}" ]; then rm -f "${BW_FILE}"; fi
     if [ -f $perfLog ]; then rm -f $perfLog; fi
 }
 
 ##############################################################################
-#                           MAIN STARTS HERE                                 #
+#                           THE SCRIPT STARTS HERE                           #
 ##############################################################################
+trap 'delTempFiles'  EXIT     # calls deletetempfiles function on exit
+
+# at first set the parameters to its default values
+setDefaults
+
+# ... then get the options from the command line
 PROVIDER=""
+FORCE_PREPS=false
 VERBOSE=false
 DOUBLE_VERBOSE=false
-
-trap 'deletetempfiles'  EXIT     # calls deletetempfiles function on exit
-
-setDefaults
-while getopts ":p:v" o; do
-	case "${o}" in
-		p) PROVIDER="${OPTARG}/" ;;
-		v) VERBOSE=true ;;
-		vv) DOUBLE_VERBOSE=true ;;
-		?) usage "($0): An error occured when entering the parameters and options!" ;;
-	esac
+DEBUG=false
+DEBUGFILE=
+while true; do
+  case "$1" in
+    -f | --force_preps ) FORCE_PREPS=true; shift ;;
+    -v | --verbose ) VERBOSE=true; shift ;;
+    -vv | --double_verbose ) VERBOSE=true; DOUBLE_VERBOSE=true; shift ;;
+    -d | --debug ) DEBUG=true; shift ;;
+    -p | --provider ) OPT_PROVIDER="$2/"; shift 2 ;;
+    --debugfile ) DEBUGFILE="$2"; shift 2 ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
 done
-shift $((OPTIND-1))
 
-if [ $# != 0 ] ; then
-    usage "($0): Wrong number of parameters!"
-fi
-
-# load configuration
+# check configuration
 confFile="${0//.sh/.conf}"
 confFile=${confFile##*/}
-confTest="./${confFile}"
-if [ -f "${confTest}" ]; then
-	source $confTest
+# look in the folder of the script
+confData="./${confFile}"
+if [ ! -f "${confData}" ]; then
+	# look in the folder /etc
+	confData="/etc/${confFile}"
 fi
-confTest="/etc/${confFile}"
-if [ -f "${confTest}" ]; then
-	source $confTest
-fi
-confTest="~/${confFile}"
-if [ -f "${confTest}" ]; then
-	source $confTest
+if [ ! -f "${confData}" ]; then
+	# look in the folder /etc/openvpn
+	confData="/etc/openvpn/${confFile}"
 fi
 
-# check if provider is set
-if [ ! -n "${PROVIDER}" ]; then
-	PROVIDER=$CONF_PROVIDER
-	if [ ! -n "${PROVIDER}" ]; then
-	    usage "($0): VPN server provider is missing! (${CONF_PROVIDER})"
+# get the provider name of the configuration file
+if [ -f "${confData}" ]; then
+	eval "grep 'CONF_PROVIDER' < $confData" > /dev/null 2> /dev/null
+fi
+
+# get the providers name
+if [ "${#OPT_PROVIDER}" -gt 1 ]; then
+	PROVIDER="${OPT_PROVIDER%/}/"
+else
+	if [ "${PROVIDER}" == "" ] && [ "${#CONF_PROVIDER}" -gt 1 ]; then
+		PROVIDER="${CONF_PROVIDER%/}/"
+	else
+    	usage "($0): VPN server provider is missing or empty! (${PROVIDER})"
 	fi
 fi
 
+# load and evaluate the configuration file
+if [ -f "${confData}" ]; then
+	source $confData
+fi
+
+# optionally print the used settings/parameters
 printSettings
+# ... and go, do your job!
 startFinding 
-
-
-
