@@ -297,6 +297,18 @@ function startFinding() {
     echo "$( timestamp )"" - Service restarted ... " | tee -a ${FASTLOG}
 }
 
+function getPathName() {
+	pushd . > /dev/null
+	SCRIPT_PATH="${BASH_SOURCE[0]}";
+	if ([ -h "${SCRIPT_PATH}" ]); then
+		while([ -h "${SCRIPT_PATH}" ]); do cd `dirname "$SCRIPT_PATH"`; SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+	fi
+	cd `dirname ${SCRIPT_PATH}` > /dev/null
+	SCRIPT_PATH=`pwd`;
+	popd  > /dev/null
+	echo $SCRIPT_PATH
+}
+
 ######################## function delTempFiles ###############################
 
 # This function is called by trap command
@@ -323,6 +335,10 @@ VERBOSE=false
 DOUBLE_VERBOSE=false
 DEBUG=false
 DEBUGFILE=
+SCRIPT_PATH="$( getPathName $0 )"
+SCRIPT="$( basename $0 )"
+SCRIPT=$SCRIPT_PATH"/"$SCRIPT
+
 while true; do
   case "$1" in
     -f | --force_preps ) FORCE_PREPS=true; shift ;;
@@ -337,7 +353,7 @@ while true; do
 done
 
 # check configuration
-confFile="${0//.sh/.conf}"
+confFile="${SCRIPT//.sh/.conf}"
 confFile=${confFile##*/}
 # look in the folder of the script
 confData="./${confFile}"
@@ -362,7 +378,7 @@ else
 	if [ "${PROVIDER}" == "" ] && [ "${#CONF_PROVIDER}" -gt 1 ]; then
 		PROVIDER="${CONF_PROVIDER%/}/"
 	else
-    	usage "($0): VPN server provider is missing or empty! (${PROVIDER})"
+    	usage "($SCRIPT): VPN server provider is missing or empty! (${PROVIDER})"
 	fi
 fi
 
@@ -374,4 +390,4 @@ fi
 # optionally print the used settings/parameters
 printSettings
 # ... and go, do your job!
-startFinding 
+startFinding
