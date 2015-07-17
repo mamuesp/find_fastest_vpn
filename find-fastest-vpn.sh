@@ -159,6 +159,15 @@ function prepareConfig() {
 	fi
 }
 
+###################### function connectionActive ###############################
+#
+# This function checks whether there is an OpenVPN connection active
+#
+function connectionActive() {
+	test="$( ifconfig tun0 2> /dev/null | grep -c '00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00' )"
+	return test
+}
+
 ######################## function checkHosts ###############################
 #
 # This function tries to open an openvpn tunnel with the settings of the 
@@ -224,7 +233,7 @@ function checkHosts() {
 		fi
 
 		bandWidth=$(<"${BW_FILE}")
-		doLog "$( timestamp )"" - Check Bandwidth ${bandWidth} against current: ${currBw} ..." ${FASTLOG}
+		doLog "$( timestamp )"" - Check Bandwidth ${bandWidth} against fastest: ${fastestBw} ..." ${FASTLOG}
 		if (( $(bc <<< "${bandWidth} > ${bwNone}") == 1 )); then
 			currBw=$bandWidth
 			if (( $(bc <<< "${currBw} > ${fastestBw}") == 1 )); then
